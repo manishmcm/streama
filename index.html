@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>awork Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f11;
+    --surface: #18181c;
+    --border: #2a2a30;
+    --text: #e8e8ed;
+    --muted: #6b6b78;
+    --red:    #e84040;
+    --red-bg: #2a1010;
+    --yellow: #e8b840;
+    --yellow-bg: #2a2010;
+    --green:  #40c870;
+    --green-bg: #0f2a18;
+    --accent: #5b8aff;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  header h1 {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  header p {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* --- Setup Box --- */
+  #setup-wrapper {
+    border-radius: 16px;
+    padding: 10px;
+    width: 100%;
+    max-width: 560px;
+  }
+  #setup-wrapper h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+  #setup-wrapper p.hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+  #setup-wrapper p.hint a { color: var(--accent); text-decoration: none; }
+
+  .field { margin-bottom: 1.2rem; }
+  .field label {
+    display: block;
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+  .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.65rem 0.9rem;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus { border-color: var(--accent); }
+
+  .section-label {
+    font-size: 0.7rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 1.8rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 1.5rem;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:hover { opacity: 0.88; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .error-msg {
+    margin-top: 1rem;
+    padding: 0.7rem 1rem;
+    background: var(--red-bg);
+    border: 1px solid var(--red);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    color: var(--red);
+    font-family: 'DM Mono', monospace;
+    display: none;
+  }
+
+  /* --- Project checkbox list --- */
+  #proj-count {
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+  }
+  #proj-count span { color: var(--accent); }
+
+  #proj-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    max-height: 360px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  #proj-list::-webkit-scrollbar { width: 4px; }
+  #proj-list::-webkit-scrollbar-track { background: transparent; }
+  #proj-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  .proj-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.55rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .proj-item:hover { border-color: var(--accent); }
+  .proj-item.checked { border-color: var(--accent); background: rgba(91,138,255,0.08); }
+  .proj-item.disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .proj-item input[type="checkbox"] { display: none; }
+
+  .proj-check {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .proj-item.checked .proj-check {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+  .proj-check::after {
+    content: '';
+    display: none;
+    width: 4px; height: 7px;
+    border: 2px solid white;
+    border-top: none; border-left: none;
+    transform: rotate(45deg) translateY(-1px);
+  }
+  .proj-item.checked .proj-check::after { display: block; }
+
+  .proj-name {
+    font-size: 0.82rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* --- Dashboard --- */
+  #dashboard { display: none; width: 100%; max-width: 1200px; }
+
+  .dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  .dash-header h2 {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .dash-header button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .dash-header button:hover { color: var(--text); border-color: var(--text); }
+
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+
+  .project-card {
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+  }
+  .project-card:hover { transform: translateY(-2px); }
+  .project-card:active { transform: scale(0.97); }
+
+  .project-card.red    { background: var(--surface); border-color: var(--red);    }
+  .project-card.yellow { background: var(--surface); border-color: var(--yellow); }
+  .project-card.green  { background: var(--surface); border-color: var(--green);  }
+
+  .project-card.running {
+    box-shadow: 0 0 0 2px currentColor, 0 0 24px -4px currentColor;
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+  .project-card.red.running    { color: var(--red);    }
+  .project-card.yellow.running { color: var(--yellow); }
+  .project-card.green.running  { color: var(--green);  }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 0 1.5px currentColor, 0 0 20px -6px currentColor; }
+    50%       { box-shadow: 0 0 0 2.5px currentColor, 0 0 32px -2px currentColor; }
+  }
+
+  .card-label {
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-hours {
+    font-family: 'DM Mono', monospace;
+    font-size: 2rem;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+  .project-card.red    .card-hours { color: var(--red);    }
+  .project-card.yellow .card-hours { color: var(--yellow); }
+  .project-card.green  .card-hours { color: var(--green);  }
+
+  .card-target {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 1.2rem;
+  }
+
+  /* Progress bar */
+  .progress-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s ease;
+  }
+  .project-card.red    .progress-fill { background: var(--red);    }
+  .project-card.yellow .progress-fill { background: var(--yellow); }
+  .project-card.green  .progress-fill { background: var(--green);  }
+
+  .card-action {
+    font-size: 0.7rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+  .project-card.red    .card-action { color: var(--red);    }
+  .project-card.yellow .card-action { color: var(--yellow); }
+  .project-card.green  .card-action { color: var(--green);  }
+
+  .running-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-right: 5px;
+    animation: blink 1s step-start infinite;
+  }
+  .project-card.red    .running-dot { background: var(--red);    }
+  .project-card.yellow .running-dot { background: var(--yellow); }
+  .project-card.green  .running-dot { background: var(--green);  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .status-bar {
+    margin-top: 2rem;
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    text-align: center;
+  }
+  .status-bar span { color: var(--accent); }
+
+  /* Loading spinner */
+  .spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-overlay {
+    position: absolute; inset: 0;
+    background: rgba(15,15,17,0.7);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+  .project-card.busy .loading-overlay { opacity: 1; pointer-events: all; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>awork / timer</h1>
+  <p id="month-label"></p>
+</header>
+
+<!-- SETUP WRAPPER -->
+<div id="setup-wrapper">
+
+<!-- SETUP STEP 1: Token -->
+<div id="setup-token">
+  <h2>Konfiguration</h2>
+  <p class="hint">
+    Gib deinen awork API-Token ein.<br>
+    Zu finden unter <a href="https://app.awork.com" target="_blank">app.awork.com</a> →
+    Einstellungen → Integrationen → API-Tokens → Neuer API-Token.
+  </p>
+  <div class="field">
+    <label>API TOKEN</label>
+    <input type="password" id="cfg-token" placeholder="Token einfügen…" />
+  </div>
+  <button class="btn" id="btn-connect" onclick="connectWithToken()">Verbinden</button>
+  <div id="error-msg" class="error-msg"></div>
+</div>
+
+<!-- SETUP STEP 2: Projekte auswählen -->
+<div id="setup-projects" style="display:none">
+  <h2>Projekte auswählen</h2>
+  <p class="hint">Wähle die Projekte für dein Dashboard aus (max. 15).</p>
+  <div id="proj-list"></div>
+  <button class="btn" id="btn-load" onclick="saveAndLoad()">Dashboard laden</button>
+  <div id="error-msg2" class="error-msg"></div>
+</div>
+
+</div><!-- /setup-wrapper -->
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="dash-header">
+    <h2>awork / timer</h2>
+    <button onclick="resetSetup()">⚙ Einstellungen</button>
+    <button onclick="logout()" style="margin-left:0.5rem">Abmelden</button>
+  </div>
+  <div class="projects-grid" id="projects-grid"></div>
+  <div class="status-bar" id="status-bar">Wird geladen…</div>
+</div>
+
+<script>
+const BASE = 'https://api.awork.com/api/v1';
+const MAX_PROJECTS = 15;
+const DEFAULT_YELLOW_PCT = 50;
+
+let cfg = null;
+let allProjects = [];
+let projects = [];
+let refreshTimer = null;
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function headers() {
+  return { 'Authorization': `Bearer ${cfg.token}`, 'Content-Type': 'application/json' };
+}
+
+async function apiFetch(path, opts = {}) {
+  const r = await fetch(BASE + path, { ...opts, headers: { ...headers(), ...(opts.headers||{}) } });
+  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  if (r.status === 204) return null;
+  return r.json();
+}
+
+function fmtMonth() {
+  return new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+}
+
+// ── budget helpers ────────────────────────────────────────────────────────────
+
+async function fetchProjectBudget(projectId) {
+  try {
+    const p = await apiFetch(`/projects/${projectId}`);
+    if (!p.timeBudget) return null;
+    const totalHours = p.timeBudget / 3600;
+    if (p.isRetainer && p.startDate && p.dueDate) {
+      const start = new Date(p.startDate);
+      const end   = new Date(p.dueDate);
+      const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+      return months > 0 ? totalHours / months : totalHours;
+    }
+    return totalHours;
+  } catch(e) {
+    console.warn('[budget] Fehler:', e.message);
+  }
+  return null;
+}
+
+// ── data loading ──────────────────────────────────────────────────────────────
+
+async function fetchBookedHours(projectId) {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const monthStartLocal = `${y}-${m}-01`;
+  const filter = `projectId eq guid'${projectId}' and startDateUtc ge datetime'${monthStartLocal}T00:00:00'`;
+  try {
+    const entries = await apiFetch(`/timeentries?filterby=${encodeURIComponent(filter)}&pageSize=500`);
+    return (entries || []).reduce((s, e) => s + (e.duration || 0), 0) / 3600;
+  } catch(e) {
+    console.error('fetchBookedHours error:', e);
+    return 0;
+  }
+}
+
+async function fetchRunningTimer() {
+  try {
+    const t = await apiFetch(`/users/${cfg.userId}/timetracking`);
+    return t || null;
+  } catch { return null; }
+}
+
+async function refreshAll() {
+  setStatus('<span class="spinner"></span> Aktualisiere…');
+  try {
+    const running = await fetchRunningTimer();
+    const runningProjectId = running?.projectId || null;
+
+    for (let i = 0; i < projects.length; i++) {
+      const p = projects[i];
+      p.booked = await fetchBookedHours(p.id);
+      p.running = (p.id === runningProjectId);
+    }
+    renderCards();
+    setStatus(`Zuletzt aktualisiert: <span>${new Date().toLocaleTimeString('de-DE')}</span> · ${fmtMonth()}`);
+  } catch (e) {
+    setStatus(`Fehler: <span>${e.message}</span>`);
+  }
+}
+
+// ── timer actions ──────────────────────────────────────────────────────────────
+
+async function toggleTimer(idx) {
+  const card = document.querySelector(`[data-idx="${idx}"]`);
+  card.classList.add('busy');
+  const p = projects[idx];
+
+  try {
+    if (p.running) {
+      await apiFetch(`/users/${cfg.userId}/timetracking/stop`, { method: 'POST' });
+      p.running = false;
+      p.booked = await fetchBookedHours(p.id);
+    } else {
+      const running = await fetchRunningTimer();
+      if (running) {
+        await apiFetch(`/users/${cfg.userId}/timetracking/stop`, { method: 'POST' });
+        projects.forEach((op) => { if (op.id === running.projectId) { op.running = false; } });
+      }
+      await apiFetch(`/users/${cfg.userId}/timetracking/start`, {
+        method: 'POST',
+        body: JSON.stringify({ timezone: 'Europe/Berlin', typeOfWorkId: cfg.towId, projectId: p.id })
+      });
+      p.running = true;
+    }
+  } catch(e) {
+    console.error('toggleTimer error:', e);
+    setStatus(`Fehler: <span>${e.message}</span>`);
+  }
+
+  card.classList.remove('busy');
+  renderCards();
+}
+
+// ── render ──────────────────────────────────────────────────────────────────
+
+function colorClass(booked, target, yellowPct) {
+  const ratio = target > 0 ? booked / target : 0;
+  if (ratio >= 1.0) return 'green';
+  if (ratio >= yellowPct / 100) return 'yellow';
+  return 'red';
+}
+
+function renderCards() {
+  const grid = document.getElementById('projects-grid');
+  grid.innerHTML = '';
+  projects.forEach((p, i) => {
+    const ratio = p.target > 0 ? Math.min(p.booked / p.target, 1) : 0;
+    const pct = Math.round(ratio * 100);
+    const cls = colorClass(p.booked, p.target, p.yellowPct);
+    const runningCls = p.running ? ' running' : '';
+
+    grid.innerHTML += `
+      <div class="project-card ${cls}${runningCls}" data-idx="${i}" onclick="toggleTimer(${i})">
+        <div class="loading-overlay"><span class="spinner"></span></div>
+        <div class="card-label">${p.name}</div>
+        <div class="card-hours">${p.booked.toFixed(1)}</div>
+        <div class="card-target">von ${Math.round(p.target * 10) / 10}h</div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  });
+}
+
+function setStatus(html) {
+  document.getElementById('status-bar').innerHTML = html;
+}
+
+// ── Step 1: connect with token ────────────────────────────────────────────────
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  el.textContent = msg;
+}
+function hideErr(id) { document.getElementById(id).style.display = 'none'; }
+
+async function connectWithToken() {
+  hideErr('error-msg');
+  const token = document.getElementById('cfg-token').value.trim();
+  if (!token) { showErr('error-msg', 'Bitte den API-Token einfügen.'); return; }
+
+  const btn = document.getElementById('btn-connect');
+  btn.disabled = true;
+  btn.textContent = 'Verbinde…';
+
+  try {
+    cfg = { token };
+
+    localStorage.setItem('awork_token', token);
+
+    const me = await apiFetch('/me');
+    cfg.userId = me.id;
+
+    const tows = await apiFetch('/typeofwork');
+    const activeTow = tows.find(t => !t.isArchived) || tows[0];
+    cfg.towId = activeTow.id;
+
+    allProjects = await apiFetch('/projects?pageSize=100');
+    allProjects = (allProjects || []).sort((a,b) => a.name.localeCompare(b.name));
+
+    let closedStatusIds = new Set();
+    try {
+      const statuses = await apiFetch('/projectstatuses');
+      closedStatusIds = new Set(
+        (statuses || []).filter(s => s.type === 'done' || s.type === 'closed' || s.isClosed).map(s => s.id)
+      );
+    } catch(e) { console.warn('[status] Fehler:', e.message); }
+
+    const activeProjects = allProjects.filter(p => !closedStatusIds.has(p.projectStatusId));
+
+    // Restore saved selection
+    let savedIds = [];
+    try { savedIds = JSON.parse(localStorage.getItem('awork_proj_ids') || '[]'); } catch {}
+
+    // Build checkbox list
+    const list = document.getElementById('proj-list');
+    list.innerHTML = '';
+    activeProjects.forEach(p => {
+      const checked = savedIds.includes(p.id);
+      const item = document.createElement('label');
+      item.className = 'proj-item' + (checked ? ' checked' : '');
+      item.dataset.id = p.id;
+      item.innerHTML = `
+        <input type="checkbox" value="${p.id}" ${checked ? 'checked' : ''}>
+        <span class="proj-check"></span>
+        <span class="proj-name">${p.name}</span>`;
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleProjItem(p.id);
+      });
+      list.appendChild(item);
+    });
+
+    updateProjCount();
+    document.getElementById('setup-token').style.display = 'none';
+
+    // Wenn Projekte bereits gespeichert → direkt ins Dashboard
+    if (savedIds.length > 0) {
+      await saveAndLoad();
+    } else {
+      document.getElementById('setup-projects').style.display = 'block';
+    }
+
+  } catch(e) {
+    showErr('error-msg', `Verbindung fehlgeschlagen: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Verbinden';
+  }
+}
+
+function toggleProjItem(id) {
+  const item = document.querySelector(`.proj-item[data-id="${id}"]`);
+  const cb = item.querySelector('input[type="checkbox"]');
+  const isChecked = item.classList.contains('checked');
+  const checkedCount = document.querySelectorAll('.proj-item.checked').length;
+
+  if (!isChecked && checkedCount >= MAX_PROJECTS) return; // limit reached
+
+  if (isChecked) {
+    item.classList.remove('checked');
+    cb.checked = false;
+  } else {
+    item.classList.add('checked');
+    cb.checked = true;
+  }
+  updateProjCount();
+}
+
+function updateProjCount() {
+  const count = document.querySelectorAll('.proj-item.checked').length;
+  const atLimit = count >= MAX_PROJECTS;
+  document.querySelectorAll('.proj-item:not(.checked)').forEach(el => {
+    el.classList.toggle('disabled', atLimit);
+  });
+}
+
+// ── Step 2: save project choice & go to dashboard ────────────────────────────
+
+async function saveAndLoad() {
+  hideErr('error-msg2');
+
+  const selectedIds = Array.from(document.querySelectorAll('.proj-item.checked')).map(el => el.dataset.id);
+  if (selectedIds.length === 0) {
+    showErr('error-msg2', 'Bitte mindestens ein Projekt auswählen.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-load');
+  btn.disabled = true;
+  btn.textContent = 'Lade Budgets…';
+
+  try {
+    const budgetResults = await Promise.allSettled(selectedIds.map(id => fetchProjectBudget(id)));
+
+    projects = selectedIds.map((id, i) => {
+      const proj = allProjects.find(p => p.id === id);
+      const budget = budgetResults[i].status === 'fulfilled' ? budgetResults[i].value : null;
+      return { name: proj.name, id, target: budget ?? 0, yellowPct: DEFAULT_YELLOW_PCT, booked: 0, running: false };
+    });
+
+    localStorage.setItem('awork_proj_ids', JSON.stringify(selectedIds));
+
+    document.getElementById('setup-wrapper').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+
+    await refreshAll();
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(refreshAll, 60000);
+  } catch(e) {
+    showErr('error-msg2', `Fehler: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Dashboard laden';
+  }
+}
+
+function logout() {
+  clearInterval(refreshTimer);
+  localStorage.removeItem('awork_token');
+  localStorage.removeItem('awork_proj_ids');
+  location.reload();
+}
+
+function resetSetup() {
+  clearInterval(refreshTimer);
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('setup-wrapper').style.display = 'block';
+  document.getElementById('setup-token').style.display = 'none';
+  document.getElementById('setup-projects').style.display = 'block';
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+
+document.getElementById('month-label').textContent = fmtMonth();
+
+// Auto-login wenn Token in localStorage gespeichert
+(async () => {
+  const savedToken = localStorage.getItem('awork_token');
+  if (savedToken) {
+    document.getElementById('cfg-token').value = savedToken;
+    await connectWithToken();
+  }
+})();
+</script>
+</body>
+</html>
