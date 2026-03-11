@@ -16,6 +16,7 @@
     --muted: #6b6b78;
     --red:    #e84040;
     --red-bg: #2a1010;
+    --orange: #e87840;
     --yellow: #e8b840;
     --yellow-bg: #2a2010;
     --green:  #40c870;
@@ -219,7 +220,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
   }
   .dash-header h2 {
     font-family: 'DM Mono', monospace;
@@ -263,7 +264,7 @@
 
   .project-card {
     border-radius: 8px;
-    padding: 1.5rem;
+    padding: 0.5rem;
     border: 1.5px solid transparent;
     cursor: pointer;
     transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
@@ -275,6 +276,7 @@
   .project-card:active { transform: scale(0.97); }
 
   .project-card.red    { background: var(--surface); border-color: var(--red);    }
+  .project-card.orange { background: var(--surface); border-color: var(--orange); }
   .project-card.yellow { background: var(--surface); border-color: var(--yellow); }
   .project-card.green  { background: var(--surface); border-color: var(--green);  }
 
@@ -283,6 +285,7 @@
     animation: pulse-border 2s ease-in-out infinite;
   }
   .project-card.red.running    { color: var(--red);    }
+  .project-card.orange.running { color: var(--orange); }
   .project-card.yellow.running { color: var(--yellow); }
   .project-card.green.running  { color: var(--green);  }
 
@@ -292,14 +295,16 @@
   }
 
   .card-label {
-    font-size: 0.72rem;
+    font-size: 0.8rem;
     font-family: 'DM Mono', monospace;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    margin-bottom: 0.8rem;
+    letter-spacing: 0.02em;
+    color: white;
+    margin-bottom: 0.5rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    /* text-align: center; */
+    font-weight: 800;
   }
 
   .card-hours {
@@ -314,6 +319,7 @@
     .card-hours { font-size: 2rem; }
   }
   .project-card.red    .card-hours { color: var(--red);    }
+  .project-card.orange .card-hours { color: var(--orange); }
   .project-card.yellow .card-hours { color: var(--yellow); }
   .project-card.green  .card-hours { color: var(--green);  }
 
@@ -338,6 +344,7 @@
     transition: width 0.6s ease;
   }
   .project-card.red    .progress-fill { background: var(--red);    }
+  .project-card.orange .progress-fill { background: var(--orange); }
   .project-card.yellow .progress-fill { background: var(--yellow); }
   .project-card.green  .progress-fill { background: var(--green);  }
 
@@ -347,6 +354,7 @@
     letter-spacing: 0.05em;
   }
   .project-card.red    .card-action { color: var(--red);    }
+  .project-card.orange .card-action { color: var(--orange); }
   .project-card.yellow .card-action { color: var(--yellow); }
   .project-card.green  .card-action { color: var(--green);  }
 
@@ -401,7 +409,6 @@
 
 <header>
   <h1>awork / timer</h1>
-  <p id="month-label"></p>
 </header>
 
 <!-- SETUP WRAPPER -->
@@ -573,6 +580,7 @@ function colorClass(booked, target, yellowPct) {
   const ratio = target > 0 ? booked / target : 0;
   if (ratio >= 1.0) return 'green';
   if (ratio >= yellowPct / 100) return 'yellow';
+  if (ratio >= 0.2) return 'orange';
   return 'red';
 }
 
